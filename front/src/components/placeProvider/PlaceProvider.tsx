@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode, useEffect } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { PlaceContext } from './PlaceContext'
 import { useMapProvider } from '../mapProvider/MapContext'
 import type { Place, UpdatePlace } from '../../types'
@@ -83,10 +83,6 @@ function PlaceProvider({ children }: PlaceProviderProps) {
   const [places, setPlaces] = useState<Place[]>([])
   const { mapBounds } = useMapProvider()
   
-  useEffect(() => {
-    console.log({places, count: places ? places.length : 0});
-  }, [places]);
-
   const addPlace = useCallback(
     (place: Place) => {
       if (!place || typeof place !== 'object') {
