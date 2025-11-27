@@ -34,7 +34,7 @@ export type rootHealthcheckGetResponseSuccess =
 export type rootHealthcheckGetResponse = rootHealthcheckGetResponseSuccess;
 
 export const getRootHealthcheckGetUrl = () => {
-  return `http://127.0.0.1:8000/healthcheck`;
+  return `https://lengin-earch-back.vercel.app/healthcheck`;
 };
 
 export const rootHealthcheckGet = async (
@@ -56,7 +56,7 @@ export const rootHealthcheckGet = async (
 };
 
 export const getRootHealthcheckGetQueryKey = () => {
-  return [`http://127.0.0.1:8000/healthcheck`] as const;
+  return [`https://lengin-earch-back.vercel.app/healthcheck`] as const;
 };
 
 export const getRootHealthcheckGetQueryOptions = <

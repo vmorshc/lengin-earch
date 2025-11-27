@@ -55,7 +55,7 @@ export type createPlaceEndpointPlacesPostResponse =
   | createPlaceEndpointPlacesPostResponseError;
 
 export const getCreatePlaceEndpointPlacesPostUrl = () => {
-  return `http://127.0.0.1:8000/places`;
+  return `https://lengin-earch-back.vercel.app/places`;
 };
 
 export const createPlaceEndpointPlacesPost = async (
@@ -193,8 +193,8 @@ export const getListPlacesEndpointPlacesGetUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `http://127.0.0.1:8000/places?${stringifiedParams}`
-    : `http://127.0.0.1:8000/places`;
+    ? `https://lengin-earch-back.vercel.app/places?${stringifiedParams}`
+    : `https://lengin-earch-back.vercel.app/places`;
 };
 
 export const listPlacesEndpointPlacesGet = async (
@@ -221,7 +221,10 @@ export const listPlacesEndpointPlacesGet = async (
 export const getListPlacesEndpointPlacesGetQueryKey = (
   params?: ListPlacesEndpointPlacesGetParams,
 ) => {
-  return [`http://127.0.0.1:8000/places`, ...(params ? [params] : [])] as const;
+  return [
+    `https://lengin-earch-back.vercel.app/places`,
+    ...(params ? [params] : []),
+  ] as const;
 };
 
 export const getListPlacesEndpointPlacesGetQueryOptions = <

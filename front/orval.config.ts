@@ -3,7 +3,7 @@ import { defineConfig } from "orval";
 export default defineConfig({
   myApi: {
     input: {
-      target: "http://127.0.0.1:8000/openapi.json",
+      target: "https://lengin-earch-back.vercel.app/openapi.json",
       // validation: true,
     },
     output: {
@@ -13,7 +13,7 @@ export default defineConfig({
       httpClient: "fetch",
       mode: "tags-split",
       prettier: true,
-      baseUrl: "http://127.0.0.1:8000",
+      baseUrl: "https://lengin-earch-back.vercel.app",
     },
   },
 });
