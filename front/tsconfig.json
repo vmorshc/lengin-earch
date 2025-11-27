@@ -16,8 +16,18 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["vite/client", "google.maps"]
+    "types": ["vite/client", "google.maps"],
+    "baseUrl": ".",
+    "paths": {
+      "tslib": ["./node_modules/tslib/tslib.d.ts"]
+    }
   },
-  "include": ["src", "vite.config.ts", "eslint.config.ts", "postcss.config.ts", "tailwind.config.ts"]
+  "include": [
+    "src",
+    "vite.config.ts",
+    "eslint.config.ts",
+    "postcss.config.ts",
+    "tailorvalwind.config.ts",
+    "orval.config.ts"
+  ]
 }
-

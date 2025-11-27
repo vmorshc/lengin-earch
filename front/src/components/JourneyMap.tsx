@@ -1,127 +1,130 @@
-import { AdvancedMarker, Map, type MapMouseEvent } from '@vis.gl/react-google-maps'
-import { useCallback, useEffect, useState } from 'react'
-import type { Place } from '../types'
-import { useTheme } from './themeProvider/ThemeContext'
-import { useMapProvider } from './mapProvider/MapContext'
-import { usePlaces } from './placeProvider/PlaceContext'
-import PlacePanel from './PlacePanel'
+import {
+  AdvancedMarker,
+  Map,
+  type MapMouseEvent,
+} from "@vis.gl/react-google-maps";
+import { useCallback, useEffect, useState } from "react";
+import type { Place } from "../types";
+import { useTheme } from "./themeProvider/ThemeContext";
+import { useMapProvider } from "./mapProvider/MapContext";
+import { usePlaces } from "./placeProvider/PlaceContext";
+import PlacePanel from "./PlacePanel";
 
 type PendingPlace = {
-  id?: Place['id']
-  position: google.maps.LatLngLiteral
-  description: string
-}
+  id?: Place["id"];
+  position: google.maps.LatLngLiteral;
+  description: string;
+};
 
 const createPlaceId = () => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID()
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
   }
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+};
 
 function JourneyMap() {
-  const { theme } = useTheme()
-  const { cameraSettings, setCameraSettings } = useMapProvider()
-  const { addPlace, updatePlace, visiblePlaces } = usePlaces()
-  const [pendingPlace, setPendingPlace] = useState<PendingPlace | null>(null)
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-  const mapId = `${import.meta.env.VITE_GOOGLE_MAP_ID ?? 'DEMO_MAP_ID'}`
-  const mapColorScheme: 'DARK' | 'LIGHT' = theme === 'dark' ? 'DARK' : 'LIGHT'
+  const { theme } = useTheme();
+  const { cameraSettings, setCameraSettings } = useMapProvider();
+  const { addPlace, updatePlace, visiblePlaces } = usePlaces();
+  const [pendingPlace, setPendingPlace] = useState<PendingPlace | null>(null);
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const mapId = `${import.meta.env.VITE_GOOGLE_MAP_ID ?? "DEMO_MAP_ID"}`;
+  const mapColorScheme: "DARK" | "LIGHT" = theme === "dark" ? "DARK" : "LIGHT";
 
   const persistPlace = useCallback(
     (place: PendingPlace | null) => {
       if (!place) {
-        return
+        return;
       }
-      const description = place.description.trim()
+      const description = place.description.trim();
       if (!description) {
-        return
+        return;
       }
       if (place.id) {
-        updatePlace(place.id, {
-          description,
-          position: place.position,
-        })
-        return
+        return;
       }
 
       addPlace({
         id: createPlaceId(),
-        position: place.position,
+        location: place.position,
         description,
-      })
+      });
     },
-    [addPlace, updatePlace],
-  )
+    [addPlace],
+  );
   const handleMarkerClick = useCallback(
     (place: Place) => {
       setPendingPlace({
         id: place.id,
-        position: place.position,
-        description: place.description ?? '',
-      })
+        position: place.location,
+        description: place.description ?? "",
+      });
     },
     [setPendingPlace],
-  )
-
+  );
 
   const handleMapClick = useCallback(
     (event: MapMouseEvent) => {
       if (pendingPlace) {
-        return
+        return;
       }
 
-      const latLng = event.detail.latLng
+      const latLng = event.detail.latLng;
       if (!latLng) {
-        return
+        return;
       }
 
       setPendingPlace({
         position: latLng,
-        description: '',
-      })
+        description: "",
+      });
     },
     [pendingPlace],
-  )
+  );
 
   const handlePanelClose = useCallback(() => {
-    persistPlace(pendingPlace)
+    persistPlace(pendingPlace);
     setTimeout(() => {
-      setPendingPlace(null)
-    }, 300)
-  }, [pendingPlace, persistPlace])
+      setPendingPlace(null);
+    }, 300);
+  }, [pendingPlace, persistPlace]);
 
   const handleDescriptionChange = useCallback((value: string) => {
     setPendingPlace((previous) => {
       if (!previous) {
-        return previous
+        return previous;
       }
 
       return {
         ...previous,
         description: value,
-      }
-    })
-  }, [])
-  
-  useEffect(() => {
-    console.log({visiblePlaces, count: visiblePlaces ? visiblePlaces.length : 0});
-  }, [visiblePlaces]);
+      };
+    });
+  }, []);
+
+  useEffect(() => {}, [visiblePlaces]);
 
   if (!apiKey) {
     return (
       <div className="alert alert-warning">
-        <span>Set VITE_GOOGLE_MAPS_API_KEY in your .env file to load the map.</span>
+        <span>
+          Set VITE_GOOGLE_MAPS_API_KEY in your .env file to load the map.
+        </span>
       </div>
-    )
+    );
   }
 
   return (
     <div
       className="relative h-full w-full overflow-hidden rounded-box border border-base-300 bg-base-100"
-      aria-label="Map for points">
+      aria-label="Map for points"
+    >
       <Map
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: "100%", height: "100%" }}
         center={cameraSettings.center}
         zoom={cameraSettings.zoom}
         gestureHandling="greedy"
@@ -139,8 +142,11 @@ function JourneyMap() {
       >
         {visiblePlaces.map((place) => (
           <AdvancedMarker
-            key={place.id ?? `${place.position.lat}-${place.position.lng}-${place.description ?? ''}`}
-            position={place.position}
+            key={
+              place.id ??
+              `${place.location.lat}-${place.location.lng}-${place.description ?? ""}`
+            }
+            position={place.location}
             title={place.description}
             onClick={() => handleMarkerClick(place)}
           />
@@ -149,7 +155,7 @@ function JourneyMap() {
 
       {pendingPlace ? (
         <PlacePanel
-          mode={pendingPlace.id ? 'edit' : 'create'}
+          mode={pendingPlace.id ? "view" : "create"}
           position={pendingPlace.position}
           description={pendingPlace.description}
           onDescriptionChange={handleDescriptionChange}
@@ -157,8 +163,7 @@ function JourneyMap() {
         />
       ) : null}
     </div>
-  )
+  );
 }
 
-export default JourneyMap
-
+export default JourneyMap;

@@ -1,5 +1,5 @@
-import Header from './Header'
-import JourneyMap from './JourneyMap'
+import Header from "./Header";
+import JourneyMap from "./JourneyMap";
 
 function Base() {
   return (
@@ -14,8 +14,7 @@ function Base() {
         </section>
       </main>
     </div>
-  )
+  );
 }
 
-export default Base
-
+export default Base;

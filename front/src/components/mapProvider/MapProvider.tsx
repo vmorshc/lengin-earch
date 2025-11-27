@@ -1,159 +1,233 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { MapContext } from './MapContext'
-import type { CameraSettings, CameraSettingsUpdate, MapContextValue } from './MapContext'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { MapContext } from "./MapContext";
+import type {
+  CameraSettings,
+  CameraSettingsUpdate,
+  MapContextValue,
+} from "./MapContext";
 
 const DEFAULT_CAMERA_SETTINGS: CameraSettings = {
   center: { lat: 40.71625, lng: -73.996221 },
   zoom: 17,
-}
+};
 
-const URL_UPDATE_THROTTLE_MS = 1000
+const URL_UPDATE_THROTTLE_MS = 1000;
 
 const cloneDefaults = (): CameraSettings => ({
   center: { ...DEFAULT_CAMERA_SETTINGS.center },
   zoom: DEFAULT_CAMERA_SETTINGS.zoom,
-})
+});
 
 const parseOrDefault = (value: string | null, fallback: number) => {
-  const parsed = Number.parseFloat(value ?? '')
-  return Number.isFinite(parsed) ? parsed : fallback
-}
+  const parsed = Number.parseFloat(value ?? "");
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
 
 const getInitialCameraSettings = (): CameraSettings => {
-  const defaults = cloneDefaults()
-  if (typeof window === 'undefined') {
-    return defaults
+  const defaults = cloneDefaults();
+  if (typeof window === "undefined") {
+    return defaults;
   }
 
-  const params = new URLSearchParams(window.location.search)
+  const params = new URLSearchParams(window.location.search);
   return {
     center: {
-      lat: parseOrDefault(params.get('lat'), defaults.center.lat),
-      lng: parseOrDefault(params.get('lng'), defaults.center.lng),
+      lat: parseOrDefault(params.get("lat"), defaults.center.lat),
+      lng: parseOrDefault(params.get("lng"), defaults.center.lng),
     },
-    zoom: parseOrDefault(params.get('zoom'), defaults.zoom),
-  }
-}
+    zoom: parseOrDefault(params.get("zoom"), defaults.zoom),
+  };
+};
 
-const mergeCameraSettings = (previous: CameraSettings, nextValue?: CameraSettingsUpdate | null) => {
+const mergeCameraSettings = (
+  previous: CameraSettings,
+  nextValue?: CameraSettingsUpdate | null,
+) => {
   if (!nextValue) {
-    return previous
+    return previous;
   }
 
   const merged = {
     ...previous,
     ...nextValue,
-  }
+  };
 
   if (nextValue.center) {
     merged.center = {
       ...previous.center,
       ...nextValue.center,
-    }
+    };
   } else if (!merged.center) {
-    merged.center = { ...previous.center }
+    merged.center = { ...previous.center };
   }
 
-  if (typeof merged.zoom !== 'number') {
-    merged.zoom = previous.zoom
+  if (typeof merged.zoom !== "number") {
+    merged.zoom = previous.zoom;
   }
 
-  if ('bounds' in merged) {
-    delete merged.bounds
+  if ("bounds" in merged) {
+    delete merged.bounds;
   }
 
-  return merged
-}
+  return merged;
+};
 
 type MapProviderProps = {
-  children: ReactNode
-}
+  children: ReactNode;
+};
 
 function MapProvider({ children }: MapProviderProps) {
-  const [cameraSettings, updateCameraSettings] = useState<CameraSettings>(getInitialCameraSettings)
-  const [mapBounds, setMapBounds] = useState<google.maps.LatLngBoundsLiteral | null>(null)
-  const latestCameraRef = useRef<CameraSettings>(cameraSettings)
-  const lastUrlUpdateRef = useRef<number>(0)
-  const pendingUpdateRef = useRef<number | null>(null)
+  const [cameraSettings, updateCameraSettings] = useState<CameraSettings>(
+    getInitialCameraSettings,
+  );
+  const [mapBounds, setMapBounds] =
+    useState<google.maps.LatLngBoundsLiteral | null>(null);
+  const [clusterCenter, setClusterCenter] = useState<google.maps.LatLngLiteral>(
+    () => getInitialCameraSettings().center,
+  );
+  const latestCameraRef = useRef<CameraSettings>(cameraSettings);
+  const lastUrlUpdateRef = useRef<number>(0);
+  const pendingUpdateRef = useRef<number | null>(null);
+  const clusterListenersRef = useRef<
+    Set<(center: google.maps.LatLngLiteral) => void>
+  >(new Set());
 
   const setCameraSettings = useCallback(
     (
-      updater: CameraSettingsUpdate | ((previous: CameraSettings) => CameraSettingsUpdate | null),
+      updater:
+        | CameraSettingsUpdate
+        | ((previous: CameraSettings) => CameraSettingsUpdate | null),
     ) => {
       updateCameraSettings((previous) => {
-        const value = typeof updater === 'function' ? updater(previous) : updater
+        const value =
+          typeof updater === "function" ? updater(previous) : updater;
         if (!value) {
-          return previous
+          return previous;
         }
 
-        const { bounds, ...cameraUpdate } = value
+        const { bounds, ...cameraUpdate } = value;
         if (bounds) {
-          setMapBounds(bounds)
+          setMapBounds(bounds);
         }
 
-        return mergeCameraSettings(previous, cameraUpdate)
-      })
+        return mergeCameraSettings(previous, cameraUpdate);
+      });
     },
     [setMapBounds, updateCameraSettings],
-  )
+  );
 
   const applyCameraSettingsToUrl = useCallback(() => {
-    if (typeof window === 'undefined') {
-      return
+    if (typeof window === "undefined") {
+      return;
     }
 
-    const params = new URLSearchParams(window.location.search)
-    params.set('lat', String(latestCameraRef.current.center.lat))
-    params.set('lng', String(latestCameraRef.current.center.lng))
-    params.set('zoom', String(latestCameraRef.current.zoom))
+    const params = new URLSearchParams(window.location.search);
+    params.set("lat", String(latestCameraRef.current.center.lat));
+    params.set("lng", String(latestCameraRef.current.center.lng));
+    params.set("zoom", String(latestCameraRef.current.zoom));
 
-    const nextSearch = params.toString()
-    const nextQuery = nextSearch ? `?${nextSearch}` : ''
+    const nextSearch = params.toString();
+    const nextQuery = nextSearch ? `?${nextSearch}` : "";
     if (window.location.search !== nextQuery) {
-      const nextUrl = `${window.location.pathname}${nextQuery}${window.location.hash ?? ''}`
-      window.history.replaceState(null, '', nextUrl)
+      const nextUrl = `${window.location.pathname}${nextQuery}${window.location.hash ?? ""}`;
+      window.history.replaceState(null, "", nextUrl);
     }
 
-    lastUrlUpdateRef.current = Date.now()
-    pendingUpdateRef.current = null
-  }, [])
+    lastUrlUpdateRef.current = Date.now();
+    pendingUpdateRef.current = null;
+  }, []);
 
   const scheduleUrlUpdate = useCallback(() => {
-    if (typeof window === 'undefined') {
-      return
+    if (typeof window === "undefined") {
+      return;
     }
 
-    const now = Date.now()
-    const elapsed = now - lastUrlUpdateRef.current
+    const now = Date.now();
+    const elapsed = now - lastUrlUpdateRef.current;
 
     if (elapsed >= URL_UPDATE_THROTTLE_MS) {
-      applyCameraSettingsToUrl()
-      return
+      applyCameraSettingsToUrl();
+      return;
     }
 
     if (pendingUpdateRef.current) {
-      return
+      return;
     }
 
     pendingUpdateRef.current = window.setTimeout(
       applyCameraSettingsToUrl,
       URL_UPDATE_THROTTLE_MS - elapsed,
-    )
-  }, [applyCameraSettingsToUrl])
+    );
+  }, [applyCameraSettingsToUrl]);
 
   useEffect(() => {
-    latestCameraRef.current = cameraSettings
-    scheduleUrlUpdate()
-  }, [cameraSettings, scheduleUrlUpdate])
+    latestCameraRef.current = cameraSettings;
+    scheduleUrlUpdate();
+  }, [cameraSettings, scheduleUrlUpdate]);
 
   useEffect(
     () => () => {
-      if (pendingUpdateRef.current && typeof window !== 'undefined') {
-        window.clearTimeout(pendingUpdateRef.current)
+      if (pendingUpdateRef.current && typeof window !== "undefined") {
+        window.clearTimeout(pendingUpdateRef.current);
       }
     },
     [],
-  )
+  );
+
+  const emitClusterUpdate = useCallback(
+    (nextCenter: google.maps.LatLngLiteral) => {
+      clusterListenersRef.current.forEach((listener) => listener(nextCenter));
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const listener = (nextCenter: google.maps.LatLngLiteral) => {
+      setClusterCenter(nextCenter);
+    };
+
+    const listeners = clusterListenersRef.current;
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  }, [setClusterCenter]);
+
+  useEffect(() => {
+    if (!mapBounds) {
+      return;
+    }
+
+    const latSpan = Math.abs(mapBounds.north - mapBounds.south);
+    const lngSpan = Math.abs(mapBounds.east - mapBounds.west);
+    const { lat, lng } = cameraSettings.center;
+    const { lat: clusterLat, lng: clusterLng } = clusterCenter;
+
+    const exceedsLat =
+      latSpan > 0 && Math.abs(lat - clusterLat) >= latSpan * 0.5;
+    const exceedsLng =
+      lngSpan > 0 && Math.abs(lng - clusterLng) >= lngSpan * 0.5;
+
+    if (exceedsLat || exceedsLng) {
+      emitClusterUpdate({ lat, lng });
+    }
+  }, [
+    cameraSettings.center,
+    cameraSettings.center.lat,
+    cameraSettings.center.lng,
+    clusterCenter,
+    clusterCenter.lat,
+    clusterCenter.lng,
+    emitClusterUpdate,
+    mapBounds,
+  ]);
 
   const contextValue = useMemo<MapContextValue>(
     () => ({
@@ -161,13 +235,22 @@ function MapProvider({ children }: MapProviderProps) {
       setCameraSettings,
       mapBounds,
       setMapBounds,
+      clusterCenter,
+      setClusterCenter,
     }),
-    [cameraSettings, mapBounds, setCameraSettings, setMapBounds],
-  )
+    [
+      cameraSettings,
+      clusterCenter,
+      mapBounds,
+      setCameraSettings,
+      setClusterCenter,
+      setMapBounds,
+    ],
+  );
 
-  return <MapContext.Provider value={contextValue}>{children}</MapContext.Provider>
+  return (
+    <MapContext.Provider value={contextValue}>{children}</MapContext.Provider>
+  );
 }
 
-export default MapProvider
-
-
+export default MapProvider;

@@ -1,23 +1,25 @@
-import { APP_NAME } from '../costants'
-import { useTheme } from './themeProvider/ThemeContext'
+import { APP_NAME } from "../costants";
+import { useTheme } from "./themeProvider/ThemeContext";
 
 function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme()
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <button
       type="button"
       className="btn btn-ghost gap-2"
       onClick={toggleTheme}
-      aria-label="Toggle theme">
-      {theme === 'light' ? (
+      aria-label="Toggle theme"
+    >
+      {theme === "light" ? (
         <>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            className="h-5 w-5">
+            className="h-5 w-5"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -34,7 +36,8 @@ function ThemeToggle() {
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            className="h-5 w-5">
+            className="h-5 w-5"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -46,7 +49,7 @@ function ThemeToggle() {
         </>
       )}
     </button>
-  )
+  );
 }
 
 function Header() {
@@ -57,8 +60,7 @@ function Header() {
         <ThemeToggle />
       </div>
     </header>
-  )
+  );
 }
 
-export default Header
-
+export default Header;

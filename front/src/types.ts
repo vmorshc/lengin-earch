@@ -1,7 +1,7 @@
 export interface Place {
-  id?: string | number
-  position: google.maps.LatLngLiteral
-  description?: string
+  id?: string | number;
+  location: google.maps.LatLngLiteral;
+  description?: string;
 }
 
-export type UpdatePlace = (id: Place['id'], updates: Partial<Place>) => void
+export type UpdatePlace = (id: Place["id"], updates: Partial<Place>) => void;
